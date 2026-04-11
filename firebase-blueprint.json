@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["manager", "waiter", "chef"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "employeeId", "email", "role"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Food or drink item in the menu",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string", "enum": ["Starter", "Main Course", "Drinks", "Dessert"] },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "isAvailable": { "type": "boolean" }
+      },
+      "required": ["name", "price", "category"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order details",
+      "type": "object",
+      "properties": {
+        "tableId": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "menuItemId": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "number" },
+              "price": { "type": "number" },
+              "notes": { "type": "string" }
+            }
+          }
+        },
+        "status": { "type": "string", "enum": ["pending", "preparing", "ready", "served", "completed"] },
+        "totalAmount": { "type": "number" },
+        "waiterId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tableId", "items", "status", "totalAmount", "waiterId"]
+    },
+    "Table": {
+      "title": "Table",
+      "description": "Restaurant table information",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string" },
+        "capacity": { "type": "number" },
+        "status": { "type": "string", "enum": ["available", "occupied", "reserved"] }
+      },
+      "required": ["number", "capacity", "status"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Customer table reservation",
+      "type": "object",
+      "properties": {
+        "customerName": { "type": "string" },
+        "customerEmail": { "type": "string", "format": "email" },
+        "customerPhone": { "type": "string" },
+        "tableId": { "type": "string" },
+        "dateTime": { "type": "string", "format": "date-time" },
+        "guestsCount": { "type": "number" },
+        "status": { "type": "string", "enum": ["confirmed", "cancelled", "completed"] }
+      },
+      "required": ["customerName", "dateTime", "guestsCount", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/menu/{itemId}": {
+      "schema": "MenuItem",
+      "description": "Menu items"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer orders"
+    },
+    "/tables/{tableId}": {
+      "schema": "Table",
+      "description": "Restaurant tables"
+    },
+    "/reservations/{reservationId}": {
+      "schema": "Reservation",
+      "description": "Table bookings"
+    }
+  }
+}

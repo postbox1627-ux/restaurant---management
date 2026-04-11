@@ -1,0 +1,5 @@
+{
+  "name": "restaurant management",
+  "description": "A comprehensive Restaurant Management System with real-time order tracking, table management, and role-based access control.",
+  "requestFramePermissions": []
+}
