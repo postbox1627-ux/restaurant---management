@@ -17,3 +17,17 @@ export const DialogTrigger = ({ children }: any) => {
 export const DialogFooter = ({ children }: any) => {
   return <div style={{ marginTop: "10px" }}>{children}</div>;
 };
+export const DialogContent = ({ children }: any) => {
+  return (
+    <div
+      style={{
+        padding: "20px",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+        background: "#fff"
+      }}
+    >
+      {children}
+    </div>
+  );
+};
