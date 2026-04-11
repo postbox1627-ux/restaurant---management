@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface Props {
   children: ReactNode;
@@ -49,13 +50,13 @@ class ErrorBoundary extends Component<Props, State> {
             </div>
             <h2 className="text-2xl font-bold text-stone-800 mb-2">Something went wrong</h2>
             <p className="text-stone-500 mb-8">{errorMessage}</p>
-            <button 
+            <Button 
               onClick={() => window.location.reload()}
               className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-8 h-12 gap-2"
             >
               <RefreshCcw size={18} />
               <span>Reload Application</span>
-            </button>
+            </Button>
           </div>
         </div>
       );
