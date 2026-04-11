@@ -17,3 +17,10 @@ export const CardTitle = ({ children }: any) => {
 export const CardContent = ({ children }: any) => {
   return <div>{children}</div>;
 };
+export const CardDescription = ({ children }: any) => {
+  return (
+    <div style={{ fontSize: "14px", color: "#666" }}>
+      {children}
+    </div>
+  );
+};
