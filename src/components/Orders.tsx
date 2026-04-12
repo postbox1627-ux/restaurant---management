@@ -393,7 +393,7 @@ const Orders = () => {
                       className="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl"
                       onClick={() => updateOrderStatus(order.id, 'completed')}
                     >
-                      Mark as Served
+                      Order Ready
                     </Button>
                   )}
                   {profile?.role === 'manager' && order.status !== 'completed' && order.status !== 'cancelled' && (
