@@ -391,7 +391,16 @@ const Orders = () => {
                   {order.status === 'preparing' && profile?.role !== 'waiter' && (
                     <Button 
                       className="col-span-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl"
-                      onClick={() => updateOrderStatus(order.id, 'completed')}
+                      onClick={async () => {
+                        await updateOrderStatus(order.id, 'completed');
+                        await addDoc(collection(db, 'notifications'), {
+                          tableId: order.tableId,
+                          orderId: order.id,
+                          message: `Order #${order.id.slice(-4)} for Table ${order.tableId} is ready to serve!`,
+                          read: false,
+                          createdAt: Timestamp.now()
+                        });
+                      }}
                     >
                       Order Ready
                     </Button>
