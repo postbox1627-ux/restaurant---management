@@ -42,8 +42,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
-      <Card className="w-full max-w-md border-none shadow-2xl backdrop-blur-lg bg-white/90 rounded-3xl overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border-none shadow-2xl rounded-3xl overflow-hidden bg-orange-600 text-white">
         <div className="bg-orange-600 p-8 flex flex-col items-center text-white">
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-4 backdrop-blur-sm">
             <UtensilsCrossed size={32} />
