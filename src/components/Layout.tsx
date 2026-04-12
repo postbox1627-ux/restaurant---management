@@ -149,7 +149,7 @@ const Toast = ({ notif, onClose }: { notif: Notification; onClose: () => void })
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
     >
-      <div className="bg-white rounded-2xl shadow-2xl shadow-stone-300 border border-stone-100 overflow-hidden w-80">
+      <div className="bg-stone-300 rounded-2xl shadow-2xl shadow-stone-400 border border-stone-300 overflow-hidden w-80">
         <div className="flex items-start gap-3 p-4">
           {/* Icon */}
           <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
