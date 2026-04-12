@@ -143,7 +143,8 @@ const Dashboard = () => {
         <div>
           <h2 className="text-3xl font-bold text-stone-800 tracking-tight">Dashboard Overview</h2>
           <p className="text-stone-500 mt-1">Welcome back! Here's what's happening today.</p>
-       
+
+         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
