@@ -201,11 +201,11 @@ const Orders = () => {
           <p className="text-stone-500 mt-1">Track and manage customer orders in real-time.</p>
         </div>
         
-        {profile?.role !== 'chef' && (
-              <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100">
-                + New Order
-              </Button>
-        )}
+          {profile?.role !== 'chef' && (
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100">
+                  + New Order
+                </Button>
+          )}
         </div>
             <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
               <DialogHeader>
