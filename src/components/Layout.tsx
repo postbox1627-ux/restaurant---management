@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -8,16 +8,29 @@ import {
   CalendarDays, 
   Users, 
   BarChart3, 
-  Settings,
   LogOut,
   Bell,
   Search,
-  User as UserIcon
+  CheckCircle2,
+  X
 } from 'lucide-react';
+import { collection, onSnapshot, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
+import { Badge } from './ui/badge';
+
+// Notification type
+interface Notification {
+  id: string;
+  tableId: string;
+  orderId: string;
+  message: string;
+  read: boolean;
+  createdAt: any;
+}
 
 const SidebarItem: React.FC<{ 
   to: string; 
@@ -117,6 +130,44 @@ const Sidebar = () => {
 };
 
 const Layout = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Listen to unread notifications from Firestore
+  useEffect(() => {
+    const q = query(
+      collection(db, 'notifications'),
+      where('read', '==', false),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      setNotifications(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
+    });
+    return () => unsub();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const markAsRead = async (id: string) => {
+    await updateDoc(doc(db, 'notifications', id), { read: true });
+  };
+
+  const markAllRead = async () => {
+    await Promise.all(notifications.map(n => updateDoc(doc(db, 'notifications', n.id), { read: true })));
+  };
+
+  const unreadCount = notifications.length;
+
   return (
     <div className="flex min-h-screen bg-[#eeeeee]">
       <Sidebar />
@@ -132,14 +183,82 @@ const Layout = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-xl text-stone-500 hover:bg-stone-50 relative">
-              <Bell size={20} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-orange-600 rounded-full border-2 border-white"></span>
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-xl text-stone-500 hover:bg-stone-50">
-              <Settings size={20} />
-            </Button>
+          <div className="flex items-center gap-4" ref={notifRef}>
+            {/* Bell Button */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-xl text-stone-500 hover:bg-stone-50 relative"
+                onClick={() => setIsNotifOpen(prev => !prev)}
+              >
+                <Bell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-orange-600 rounded-full border-2 border-white text-white text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Notification Dropdown */}
+              {isNotifOpen && (
+                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl shadow-stone-200 border border-stone-100 z-50 overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-stone-800 text-sm">Notifications</h3>
+                      {unreadCount > 0 && (
+                        <Badge className="bg-orange-100 text-orange-600 border-none rounded-full text-[10px] px-2">
+                          {unreadCount} new
+                        </Badge>
+                      )}
+                    </div>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllRead}
+                        className="text-xs text-orange-600 font-semibold hover:underline"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Notification List */}
+                  <div className="max-h-72 overflow-y-auto">
+                    {notifications.length === 0 ? (
+                      <div className="py-10 text-center text-stone-400">
+                        <Bell size={28} className="mx-auto mb-2 opacity-30" />
+                        <p className="text-xs">No new notifications</p>
+                      </div>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif.id}
+                          className="flex items-start gap-3 px-5 py-4 border-b border-stone-50 hover:bg-stone-50 transition-colors"
+                        >
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <CheckCircle2 size={16} className="text-emerald-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-stone-800">{notif.message}</p>
+                            <p className="text-xs text-stone-400 mt-0.5">
+                              {notif.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => markAsRead(notif.id)}
+                            className="text-stone-300 hover:text-stone-500 transition-colors mt-0.5"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {/* Settings icon REMOVED */}
           </div>
         </header>
         
