@@ -117,7 +117,7 @@ const Menu = () => {
             </Button>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger render={
+              <DialogTrigger asChild>
                 <Button 
                   onClick={() => {
                     setEditingItem(null);
@@ -128,7 +128,7 @@ const Menu = () => {
                   <Plus size={20} />
                   <span>Add Item</span>
                 </Button>
-              } />
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-stone-800">
