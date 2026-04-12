@@ -206,15 +206,56 @@ const Reservations = () => {
                     onChange={(e) => setFormData({...formData, guestsCount: e.target.value})}
                     className="rounded-xl border-stone-200 h-11"
                   />
-                </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-stone-700">Reservation Time</label>
-                  <Input 
-                    type="time"
-                    value={formData.reservationTime}
-                    onChange={(e) => setFormData({...formData, reservationTime: e.target.value})}
-                    className="rounded-xl border-stone-200 h-11"
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.reservationTime.split(':')[0]}
+                      onValueChange={(h) => {
+                        const mins = formData.reservationTime.split(':')[1] || '00';
+                        setFormData({...formData, reservationTime: `${h}:${mins}`});
+                      }}
+                    >
+                      <SelectTrigger className="rounded-xl border-stone-200 h-11 flex-1">
+                        <SelectValue placeholder="Hour" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
+                        {['12','01','02','03','04','05','06','07','08','09','10','11'].map(h => (
+                          <SelectItem key={h} value={h}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                
+                    <Select
+                      value={formData.reservationTime.split(':')[1] || '00'}
+                      onValueChange={(m) => {
+                        const hrs = formData.reservationTime.split(':')[0] || '12';
+                        setFormData({...formData, reservationTime: `${hrs}:${m}`});
+                      }}
+                    >
+                      <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
+                        <SelectValue placeholder="Min" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
+                        {['00','15','30','45'].map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                
+                    <Select
+                      value={formData.reservationAmPm || 'AM'}
+                      onValueChange={(val) => setFormData({...formData, reservationAmPm: val})}
+                    >
+                      <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-stone-100 shadow-xl">
+                        <SelectItem value="AM">AM</SelectItem>
+                        <SelectItem value="PM">PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-stone-700">Select Table</label>
