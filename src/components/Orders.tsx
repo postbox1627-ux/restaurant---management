@@ -206,7 +206,7 @@ const Orders = () => {
                 + New Order
               </Button>
         )}
-      </div>
+        </div>
             <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-stone-800">Create New Order</DialogTitle>
