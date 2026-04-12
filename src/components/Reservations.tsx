@@ -64,7 +64,6 @@ const Reservations = () => {
   const getTablesNeeded = () => {
     const guests = parseInt(formData.guestsCount) || 0;
     if (guests <= 0) return 0;
-    // Use max capacity among available tables, fallback to 4
     const maxCap = tables.length > 0 ? Math.max(...tables.map(t => t.capacity)) : 4;
     return Math.ceil(guests / maxCap);
   };
@@ -80,12 +79,18 @@ const Reservations = () => {
 
     const tablesNeeded = getTablesNeeded();
 
+    // Get consecutive tables starting from selected
+    const availableTables = tables.filter(t => t.status === 'available');
+    const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
+    const selectedTables = availableTables.slice(startIndex, startIndex + tablesNeeded);
+
     const data = {
       customerName: formData.customerName,
       customerEmail: formData.customerEmail,
       customerPhone: formData.customerPhone,
       dateTime: Timestamp.fromDate(reservationDate),
       tableId: formData.tableId,
+      tableIds: selectedTables.map(t => t.number),
       tablesNeeded,
       guestsCount: parseInt(formData.guestsCount),
       status: formData.status
@@ -94,9 +99,9 @@ const Reservations = () => {
     try {
       await addDoc(collection(db, 'reservations'), data);
       
-      const tableToUpdate = tables.find(t => t.number === formData.tableId);
-      if (tableToUpdate) {
-        await updateDoc(doc(db, 'tables', tableToUpdate.id), { status: 'reserved' });
+      // Reserve all selected tables
+      for (const table of selectedTables) {
+        await updateDoc(doc(db, 'tables', table.id), { status: 'reserved' });
       }
 
       setIsDialogOpen(false);
@@ -121,13 +126,16 @@ const Reservations = () => {
       const resToUpdate = reservations.find(r => r.id === id);
       await updateDoc(doc(db, 'reservations', id), { status });
       
-      if (resToUpdate && resToUpdate.tableId) {
-        const tableToUpdate = tables.find(t => t.number === resToUpdate.tableId);
-        if (tableToUpdate) {
-          let newTableStatus: any = 'available';
-          if (status === 'confirmed') newTableStatus = 'reserved';
-          if (status === 'completed') newTableStatus = 'occupied';
-          await updateDoc(doc(db, 'tables', tableToUpdate.id), { status: newTableStatus });
+      if (resToUpdate) {
+        const tableIds = (resToUpdate as any).tableIds || (resToUpdate.tableId ? [resToUpdate.tableId] : []);
+        for (const tableNum of tableIds) {
+          const tableToUpdate = tables.find(t => t.number === tableNum);
+          if (tableToUpdate) {
+            let newTableStatus: any = 'available';
+            if (status === 'confirmed') newTableStatus = 'reserved';
+            if (status === 'completed') newTableStatus = 'occupied';
+            await updateDoc(doc(db, 'tables', tableToUpdate.id), { status: newTableStatus });
+          }
         }
       }
     } catch (error) {
@@ -157,6 +165,13 @@ const Reservations = () => {
   );
 
   const tablesNeeded = getTablesNeeded();
+  const availableTables = tables.filter(t => t.status === 'available');
+
+  // Preview which tables will be reserved
+  const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
+  const previewTables = startIndex >= 0 
+    ? availableTables.slice(startIndex, startIndex + tablesNeeded).map(t => t.number)
+    : [];
 
   return (
     <div className="space-y-8">
@@ -226,7 +241,7 @@ const Reservations = () => {
                     />
                   </div>
 
-                  {/* Tables Needed — auto calculated */}
+                  {/* Tables Required */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">Tables Required</label>
                     <div className={`rounded-xl h-11 px-4 flex items-center justify-between border ${
@@ -302,28 +317,36 @@ const Reservations = () => {
 
                   {/* Starting Table */}
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-stone-700">Starting Table</label>
+                    <label className="text-sm font-bold text-stone-700">
+                      Select Table{tablesNeeded > 1 ? 's' : ''}
+                    </label>
                     <Select
                       value={formData.tableId}
                       onValueChange={(val) => setFormData({...formData, tableId: val})}
                     >
                       <SelectTrigger className="rounded-xl border-stone-200 h-11">
-                        <SelectValue placeholder="Choose starting table" />
+                        <SelectValue placeholder="Choose a table" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-stone-100 shadow-xl">
-                        {tables
-                          .filter(table => table.capacity >= parseInt(formData.guestsCount || '1'))
-                          .map(table => (
-                            <SelectItem key={table.id} value={table.number}>
-                              Table {table.number} ({table.capacity} seats)
-                            </SelectItem>
-                          ))
-                        }
+                        {availableTables.map(table => (
+                          <SelectItem key={table.id} value={table.number}>
+                            Table {table.number} ({table.capacity} seats)
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                    {tablesNeeded > 1 && (
-                      <p className="text-[11px] text-orange-500 font-medium">
-                        ⚠ {tablesNeeded} tables will be reserved starting from selected table
+
+                    {/* Preview which tables will be reserved */}
+                    {previewTables.length > 0 && (
+                      <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
+                        <p className="text-[11px] text-emerald-700 font-semibold">
+                          ✓ Will reserve: Table{previewTables.length > 1 ? 's' : ''} {previewTables.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    {formData.tableId && previewTables.length < tablesNeeded && (
+                      <p className="text-[11px] text-rose-500 font-medium">
+                        ⚠ Not enough consecutive available tables from this point
                       </p>
                     )}
                   </div>
@@ -346,7 +369,7 @@ const Reservations = () => {
                 <Button 
                   onClick={handleSave}
                   className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl h-12 font-bold"
-                  disabled={!formData.customerName}
+                  disabled={!formData.customerName || !formData.tableId || previewTables.length < tablesNeeded}
                 >
                   Confirm Booking
                 </Button>
@@ -404,7 +427,9 @@ const Reservations = () => {
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">Tables</p>
                   <p className="text-sm font-bold text-stone-800">
-                    {(res as any).tablesNeeded ? `${(res as any).tablesNeeded} Table${(res as any).tablesNeeded > 1 ? 's' : ''}` : res.tableId ? `Table ${res.tableId}` : 'N/A'}
+                    {(res as any).tableIds?.length > 0
+                      ? `${(res as any).tableIds.join(', ')}`
+                      : res.tableId ? `Table ${res.tableId}` : 'N/A'}
                   </p>
                 </div>
                 <div className="bg-stone-50 p-3 rounded-xl">
