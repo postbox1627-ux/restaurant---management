@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { collection, query, onSnapshot, orderBy, addDoc, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import type { Order, OrderStatus, MenuItem, Table as TableType } from '../types';
+import { Order, OrderStatus, MenuItem, Table as TableType } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -201,12 +201,14 @@ const Orders = () => {
           <p className="text-stone-500 mt-1">Track and manage customer orders in real-time.</p>
         </div>
         
-          {profile?.role !== 'chef' && (
-            <button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 flex items-center gap-2 shadow-lg shadow-orange-100">
-              + New Order
-            </button>
-          )}
-    </div>
+        {profile?.role !== 'chef' && (
+          <Dialog open={isNewOrderOpen} onOpenChange={setIsNewOrderOpen}>
+            <DialogTrigger render={
+              <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100">
+                <Plus size={20} />
+                <span>New Order</span>
+              </Button>
+            } />
             <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-stone-800">Create New Order</DialogTitle>
@@ -304,7 +306,7 @@ const Orders = () => {
             </DialogContent>
           </Dialog>
         )}
-    </div>
+      </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
