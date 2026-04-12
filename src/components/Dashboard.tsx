@@ -219,12 +219,12 @@ const Dashboard = () => {
               {recentOrders.length === 0 ? (
                 <p className="text-center text-stone-400 py-8">No recent orders found.</p>
               ) : (
-                recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600 font-bold">
-                        {order.tableId.slice(-2)}
-                      </div>
+                  {recentOrders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-stone-600 font-bold">
+                          {order.tableId.slice(-2)}
+                        </div>
                       <div>
                         <p className="text-sm font-bold text-stone-800">Table {order.tableId}</p>
                         <p className="text-xs text-stone-500">{order.items.length} items • ₹{order.totalAmount}</p>
@@ -238,7 +238,8 @@ const Dashboard = () => {
                       {order.status}
                     </Badge>
                   </div>
-                ))
+                ))}
+              </>
               )}
             </div>
           </CardContent>
