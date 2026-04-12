@@ -61,6 +61,14 @@ const Reservations = () => {
     };
   }, []);
 
+  const getTablesNeeded = () => {
+    const guests = parseInt(formData.guestsCount) || 0;
+    if (guests <= 0) return 0;
+    // Use max capacity among available tables, fallback to 4
+    const maxCap = tables.length > 0 ? Math.max(...tables.map(t => t.capacity)) : 4;
+    return Math.ceil(guests / maxCap);
+  };
+
   const handleSave = async () => {
     let [hours, minutes] = formData.reservationTime.split(':').map(Number);
     const ampm = formData.reservationAmPm;
@@ -70,12 +78,15 @@ const Reservations = () => {
     const reservationDate = new Date(formData.dateTime);
     reservationDate.setHours(hours, minutes, 0, 0);
 
+    const tablesNeeded = getTablesNeeded();
+
     const data = {
       customerName: formData.customerName,
       customerEmail: formData.customerEmail,
       customerPhone: formData.customerPhone,
       dateTime: Timestamp.fromDate(reservationDate),
       tableId: formData.tableId,
+      tablesNeeded,
       guestsCount: parseInt(formData.guestsCount),
       status: formData.status
     };
@@ -145,6 +156,8 @@ const Reservations = () => {
     res.customerPhone?.includes(search)
   );
 
+  const tablesNeeded = getTablesNeeded();
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -178,6 +191,8 @@ const Reservations = () => {
               </DialogHeader>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
                 <div className="space-y-4">
+
+                  {/* Customer Name */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">Customer Name</label>
                     <Input 
@@ -187,6 +202,8 @@ const Reservations = () => {
                       className="rounded-xl border-stone-200 h-11"
                     />
                   </div>
+
+                  {/* Phone */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">Phone Number</label>
                     <Input 
@@ -196,15 +213,41 @@ const Reservations = () => {
                       className="rounded-xl border-stone-200 h-11"
                     />
                   </div>
+
+                  {/* Guests Count */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">Guests Count</label>
                     <Input 
                       type="number"
+                      min="1"
                       value={formData.guestsCount}
                       onChange={(e) => setFormData({...formData, guestsCount: e.target.value, tableId: ''})}
                       className="rounded-xl border-stone-200 h-11"
                     />
                   </div>
+
+                  {/* Tables Needed — auto calculated */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Tables Required</label>
+                    <div className={`rounded-xl h-11 px-4 flex items-center justify-between border ${
+                      tablesNeeded > 0 ? 'bg-orange-50 border-orange-200' : 'bg-stone-50 border-stone-200'
+                    }`}>
+                      {tablesNeeded > 0 ? (
+                        <>
+                          <span className="text-sm font-bold text-orange-700">
+                            {tablesNeeded} Table{tablesNeeded > 1 ? 's' : ''}
+                          </span>
+                          <span className="text-xs text-orange-400">
+                            for {formData.guestsCount} guests
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-stone-400">Enter guests count above</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Reservation Time */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">Reservation Time</label>
                     <div className="flex gap-2">
@@ -256,11 +299,16 @@ const Reservations = () => {
                       </Select>
                     </div>
                   </div>
+
+                  {/* Starting Table */}
                   <div className="space-y-2">
-                    <label className="text-sm font-bold text-stone-700">Select Table</label>
-                    <Select value={formData.tableId} onValueChange={(val) => setFormData({...formData, tableId: val})}>
+                    <label className="text-sm font-bold text-stone-700">Starting Table</label>
+                    <Select
+                      value={formData.tableId}
+                      onValueChange={(val) => setFormData({...formData, tableId: val})}
+                    >
                       <SelectTrigger className="rounded-xl border-stone-200 h-11">
-                        <SelectValue placeholder="Choose a table" />
+                        <SelectValue placeholder="Choose starting table" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-stone-100 shadow-xl">
                         {tables
@@ -273,13 +321,16 @@ const Reservations = () => {
                         }
                       </SelectContent>
                     </Select>
-                    {parseInt(formData.guestsCount) > 0 && (
-                      <p className="text-[11px] text-stone-400">
-                        Showing tables with capacity ≥ {formData.guestsCount} guests
+                    {tablesNeeded > 1 && (
+                      <p className="text-[11px] text-orange-500 font-medium">
+                        ⚠ {tablesNeeded} tables will be reserved starting from selected table
                       </p>
                     )}
                   </div>
+
                 </div>
+
+                {/* Calendar */}
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-stone-700">Date</label>
                   <Calendar
@@ -290,6 +341,7 @@ const Reservations = () => {
                   />
                 </div>
               </div>
+
               <DialogFooter>
                 <Button 
                   onClick={handleSave}
@@ -304,6 +356,7 @@ const Reservations = () => {
         </div>
       </div>
 
+      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
         <Input 
@@ -314,6 +367,7 @@ const Reservations = () => {
         />
       </div>
 
+      {/* Reservation Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {filteredReservations.map((res) => (
           <Card key={res.id} className="border-none shadow-sm shadow-stone-200 rounded-2xl overflow-hidden bg-white hover:shadow-md transition-all duration-300">
@@ -348,14 +402,16 @@ const Reservations = () => {
                   <p className="text-sm font-bold text-stone-800">{res.guestsCount} Persons</p>
                 </div>
                 <div className="bg-stone-50 p-3 rounded-xl">
-                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">Table</p>
-                  <p className="text-sm font-bold text-stone-800">{res.tableId ? `Table ${res.tableId}` : 'N/A'}</p>
+                  <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">Tables</p>
+                  <p className="text-sm font-bold text-stone-800">
+                    {(res as any).tablesNeeded ? `${(res as any).tablesNeeded} Table${(res as any).tablesNeeded > 1 ? 's' : ''}` : res.tableId ? `Table ${res.tableId}` : 'N/A'}
+                  </p>
                 </div>
                 <div className="bg-stone-50 p-3 rounded-xl">
                   <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-1">Contact</p>
-                  <div className="flex items-center gap-3 text-sm font-bold text-stone-800">
-                    <Phone size={14} className="text-stone-400" />
-                    <span>{res.customerPhone || 'N/A'}</span>
+                  <div className="flex items-center gap-1 text-sm font-bold text-stone-800">
+                    <Phone size={14} className="text-stone-400 flex-shrink-0" />
+                    <span className="truncate">{res.customerPhone || 'N/A'}</span>
                   </div>
                 </div>
               </div>
