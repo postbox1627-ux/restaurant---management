@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext"; // 👈 ADD THIS
-
+import Login from "./components/Login";
 import Layout from "./components/Layout";
 import Dashboard from "./components/Dashboard";
 import Orders from "./components/Orders";
@@ -9,13 +9,37 @@ import Menu from "./components/Menu";
 import Reservations from "./components/Reservations";
 import Staff from "./components/Staff";
 import Reports from "./components/Reports";
+import { useAuth } from "./context/AuthContext";
+import { Navigate } from "react-router-dom";
 
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <div>Loading...</div>;
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  return children;
+};
 function App() {
   return (
     <AuthProvider> {/* 👈 WRAP EVERYTHING */}
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Layout />}>
+          {/* ✅ Login page */}
+          <Route path="/login" element={<Login />} />
+
+          {/* ✅ Protected routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="orders" element={<Orders />} />
             <Route path="tables" element={<Tables />} />
