@@ -63,7 +63,7 @@ const Reservations = () => {
 
   const handleSave = async () => {
     let [hours, minutes] = formData.reservationTime.split(':').map(Number);
-    const ampm = formData.reservationAmPm || 'AM';
+    const ampm = formData.reservationAmPm: 'AM' as 'AM' | 'PM';
     if (ampm === 'PM' && hours !== 12) hours += 12;
     if (ampm === 'AM' && hours === 12) hours = 0;
     const reservationDate = new Date(formData.dateTime);
@@ -247,8 +247,8 @@ const Reservations = () => {
                     </Select>
                 
                     <Select
-                      value={formData.reservationAmPm || 'AM'}
-                      onValueChange={(val) => setFormData({...formData, reservationAmPm: 'AM'})}
+                      value={formData.reservationAmPm: 'AM' as 'AM' | 'PM'}
+                      onValueChange={(val) => setFormData({...formData, reservationAmPm: 'AM' as 'AM' | 'PM'})}
                     >
                       <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
                         <SelectValue />
