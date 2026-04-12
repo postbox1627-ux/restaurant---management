@@ -176,7 +176,7 @@ const Toast = ({ notif, onClose }: { notif: Notification; onClose: () => void })
           </button>
         </div>
         {/* Progress bar — shrinks over 5s */}
-        <div className="h-1 bg-stone-100">
+        <div className="h-1 bg-stone-300">
           <div
             className="h-full bg-emerald-500 origin-left"
             style={{
