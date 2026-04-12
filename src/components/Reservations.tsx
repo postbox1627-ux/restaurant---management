@@ -62,7 +62,10 @@ const Reservations = () => {
   }, []);
 
   const handleSave = async () => {
-    const [hours, minutes] = formData.reservationTime.split(':').map(Number);
+    let [hours, minutes] = formData.reservationTime.split(':').map(Number);
+    const ampm = formData.reservationAmPm || 'AM';
+    if (ampm === 'PM' && hours !== 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
     const reservationDate = new Date(formData.dateTime);
     reservationDate.setHours(hours, minutes, 0, 0);
 
