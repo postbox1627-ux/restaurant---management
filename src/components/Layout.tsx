@@ -22,7 +22,6 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
 
-// Notification type
 interface Notification {
   id: string;
   tableId: string;
@@ -129,12 +128,76 @@ const Sidebar = () => {
   );
 };
 
+// ── Toast component ────────────────────────────────────────────────────────────
+const Toast = ({ notif, onClose }: { notif: Notification; onClose: () => void }) => {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger enter animation
+    const show = setTimeout(() => setVisible(true), 10);
+    // Auto-dismiss after 5s
+    const hide = setTimeout(() => {
+      setVisible(false);
+      setTimeout(onClose, 400);
+    }, 5000);
+    return () => { clearTimeout(show); clearTimeout(hide); };
+  }, []);
+
+  return (
+    <div
+      className={`transition-all duration-400 ease-in-out ${
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+      }`}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl shadow-stone-300 border border-stone-100 overflow-hidden w-80">
+        <div className="flex items-start gap-3 p-4">
+          {/* Icon */}
+          <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+            <CheckCircle2 size={20} className="text-emerald-600" />
+          </div>
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-0.5">
+              Order Ready 🍽️
+            </p>
+            <p className="text-sm font-semibold text-stone-800 leading-snug">
+              {notif.message}
+            </p>
+            <p className="text-xs text-stone-400 mt-1">
+              {notif.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+          {/* Close */}
+          <button
+            onClick={() => { setVisible(false); setTimeout(onClose, 400); }}
+            className="text-stone-300 hover:text-stone-500 transition-colors mt-0.5 flex-shrink-0"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        {/* Progress bar — shrinks over 5s */}
+        <div className="h-1 bg-stone-100">
+          <div
+            className="h-full bg-emerald-500 origin-left"
+            style={{
+              animation: 'shrinkBar 5s linear forwards'
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Layout ─────────────────────────────────────────────────────────────────────
 const Layout = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [toasts, setToasts] = useState<Notification[]>([]);
   const notifRef = useRef<HTMLDivElement>(null);
+  const prevIdsRef = useRef<Set<string>>(new Set());
 
-  // Listen to unread notifications from Firestore
+  // Listen to unread notifications
   useEffect(() => {
     const q = query(
       collection(db, 'notifications'),
@@ -142,12 +205,20 @@ const Layout = () => {
       orderBy('createdAt', 'desc')
     );
     const unsub = onSnapshot(q, (snapshot) => {
-      setNotifications(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification)));
+      const fetched = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Notification));
+      setNotifications(fetched);
+
+      // Find truly new ones (not seen before in this session)
+      const newOnes = fetched.filter(n => !prevIdsRef.current.has(n.id));
+      if (newOnes.length > 0) {
+        setToasts(prev => [...prev, ...newOnes]);
+        newOnes.forEach(n => prevIdsRef.current.add(n.id));
+      }
     });
     return () => unsub();
   }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
@@ -166,11 +237,24 @@ const Layout = () => {
     await Promise.all(notifications.map(n => updateDoc(doc(db, 'notifications', n.id), { read: true })));
   };
 
+  const dismissToast = (id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
   const unreadCount = notifications.length;
 
   return (
     <div className="flex min-h-screen bg-[#eeeeee]">
+      {/* Keyframe for progress bar */}
+      <style>{`
+        @keyframes shrinkBar {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
+      `}</style>
+
       <Sidebar />
+
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-16 bg-[#eeeeee] backdrop-blur-md border-b border-stone-100 sticky top-0 z-10 px-8 flex items-center justify-between">
           <div className="flex items-center gap-4 flex-1 max-w-md">
@@ -184,7 +268,6 @@ const Layout = () => {
           </div>
           
           <div className="flex items-center gap-4" ref={notifRef}>
-            {/* Bell Button */}
             <div className="relative">
               <Button
                 variant="ghost"
@@ -200,10 +283,9 @@ const Layout = () => {
                 )}
               </Button>
 
-              {/* Notification Dropdown */}
+              {/* Bell Dropdown */}
               {isNotifOpen && (
                 <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl shadow-stone-200 border border-stone-100 z-50 overflow-hidden">
-                  {/* Header */}
                   <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-stone-800 text-sm">Notifications</h3>
@@ -214,16 +296,11 @@ const Layout = () => {
                       )}
                     </div>
                     {unreadCount > 0 && (
-                      <button
-                        onClick={markAllRead}
-                        className="text-xs text-orange-600 font-semibold hover:underline"
-                      >
+                      <button onClick={markAllRead} className="text-xs text-orange-600 font-semibold hover:underline">
                         Mark all read
                       </button>
                     )}
                   </div>
-
-                  {/* Notification List */}
                   <div className="max-h-72 overflow-y-auto">
                     {notifications.length === 0 ? (
                       <div className="py-10 text-center text-stone-400">
@@ -232,10 +309,7 @@ const Layout = () => {
                       </div>
                     ) : (
                       notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className="flex items-start gap-3 px-5 py-4 border-b border-stone-50 hover:bg-stone-50 transition-colors"
-                        >
+                        <div key={notif.id} className="flex items-start gap-3 px-5 py-4 border-b border-stone-50 hover:bg-stone-50 transition-colors">
                           <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                             <CheckCircle2 size={16} className="text-emerald-600" />
                           </div>
@@ -245,10 +319,7 @@ const Layout = () => {
                               {notif.createdAt?.toDate?.()?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </p>
                           </div>
-                          <button
-                            onClick={() => markAsRead(notif.id)}
-                            className="text-stone-300 hover:text-stone-500 transition-colors mt-0.5"
-                          >
+                          <button onClick={() => markAsRead(notif.id)} className="text-stone-300 hover:text-stone-500 transition-colors mt-0.5">
                             <X size={14} />
                           </button>
                         </div>
@@ -258,7 +329,6 @@ const Layout = () => {
                 </div>
               )}
             </div>
-            {/* Settings icon REMOVED */}
           </div>
         </header>
         
@@ -266,6 +336,17 @@ const Layout = () => {
           <Outlet />
         </div>
       </main>
+
+      {/* ── Toast Stack (bottom-right) ── */}
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+        {toasts.map(toast => (
+          <Toast
+            key={toast.id}
+            notif={toast}
+            onClose={() => dismissToast(toast.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 };
