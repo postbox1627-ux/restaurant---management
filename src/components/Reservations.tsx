@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Calendar as CalendarIcon, Phone, Mail, User, Clock, Trash2 } from 'lucide-react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
+import { Plus, Search, Calendar as CalendarIcon, Phone, User, Clock, Trash2 } from 'lucide-react';
+import { collection, onSnapshot, addDoc, updateDoc, doc, Timestamp, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import type { Reservation, ReservationStatus, Table as TableType } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -32,7 +32,6 @@ const Reservations = () => {
   const [tables, setTables] = useState<TableType[]>([]);
   const [search, setSearch] = useState('');
   
-  // New Reservation State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     customerName: '',
@@ -40,6 +39,7 @@ const Reservations = () => {
     customerPhone: '',
     dateTime: new Date(),
     reservationTime: '12:00',
+    reservationAmPm: 'AM' as 'AM' | 'PM',
     tableId: '',
     guestsCount: '2',
     status: 'confirmed' as ReservationStatus
@@ -63,9 +63,10 @@ const Reservations = () => {
 
   const handleSave = async () => {
     let [hours, minutes] = formData.reservationTime.split(':').map(Number);
-    const ampm = formData.reservationAmPm: 'AM' as const;
+    const ampm = formData.reservationAmPm;
     if (ampm === 'PM' && hours !== 12) hours += 12;
     if (ampm === 'AM' && hours === 12) hours = 0;
+
     const reservationDate = new Date(formData.dateTime);
     reservationDate.setHours(hours, minutes, 0, 0);
 
@@ -82,7 +83,6 @@ const Reservations = () => {
     try {
       await addDoc(collection(db, 'reservations'), data);
       
-      // Update table status to reserved
       const tableToUpdate = tables.find(t => t.number === formData.tableId);
       if (tableToUpdate) {
         await updateDoc(doc(db, 'tables', tableToUpdate.id), { status: 'reserved' });
@@ -95,9 +95,10 @@ const Reservations = () => {
         customerPhone: '',
         dateTime: new Date(),
         reservationTime: '12:00',
+        reservationAmPm: 'AM' as 'AM' | 'PM',
         tableId: '',
         guestsCount: '2',
-        status: 'confirmed'
+        status: 'confirmed' as ReservationStatus
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.CREATE, 'reservations');
@@ -109,7 +110,6 @@ const Reservations = () => {
       const resToUpdate = reservations.find(r => r.id === id);
       await updateDoc(doc(db, 'reservations', id), { status });
       
-      // Update table status
       if (resToUpdate && resToUpdate.tableId) {
         const tableToUpdate = tables.find(t => t.number === resToUpdate.tableId);
         if (tableToUpdate) {
@@ -128,16 +128,11 @@ const Reservations = () => {
     try {
       const batch = writeBatch(db);
       const snapshot = await getDocs(collection(db, 'reservations'));
-      
-      // Delete all reservations
       snapshot.docs.forEach(d => batch.delete(d.ref));
-      
-      // Reset all reserved tables to available
       const reservedTables = tables.filter(t => t.status === 'reserved');
       reservedTables.forEach(t => {
         batch.update(doc(db, 'tables', t.id), { status: 'available' });
       });
-
       await batch.commit();
     } catch (error: any) {
       console.error("Clear all reservations error:", error);
@@ -176,129 +171,130 @@ const Reservations = () => {
                 <Plus size={20} />
                 <span>New Booking</span>
               </Button>
-           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-bold text-stone-800">New Reservation</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-stone-700">Customer Name</label>
-                  <Input 
-                    value={formData.customerName}
-                    onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                    placeholder="John Doe"
-                    className="rounded-xl border-stone-200 h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-stone-700">Phone Number</label>
-                  <Input 
-                    value={formData.customerPhone}
-                    onChange={(e) => setFormData({...formData, customerPhone: e.target.value})}
-                    placeholder="+1 234 567 890"
-                    className="rounded-xl border-stone-200 h-11"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-stone-700">Guests Count</label>
-                  <Input 
-                    type="number"
-                    value={formData.guestsCount}
-                    onChange={(e) => setFormData({...formData, guestsCount: e.target.value})}
-                    className="rounded-xl border-stone-200 h-11"
-                  />
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-stone-700">Reservation Time</label>
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.reservationTime.split(':')[0]}
-                      onValueChange={(h) => {
-                        const mins = formData.reservationTime.split(':')[1] || '00';
-                        setFormData({...formData, reservationTime: `${h}:${mins}`});
-                      }}
-                    >
-                      <SelectTrigger className="rounded-xl border-stone-200 h-11 flex-1">
-                        <SelectValue placeholder="Hour" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
-                        {['12','01','02','03','04','05','06','07','08','09','10','11'].map(h => (
-                          <SelectItem key={h} value={h}>{h}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                
-                    <Select
-                      value={formData.reservationTime.split(':')[1] || '00'}
-                      onValueChange={(m) => {
-                        const hrs = formData.reservationTime.split(':')[0] || '12';
-                        setFormData({...formData, reservationTime: `${hrs}:${m}`});
-                      }}
-                    >
-                      <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
-                        <SelectValue placeholder="Min" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
-                        {['00','15','30','45'].map(m => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                
-                    <Select
-                      value={formData.reservationAmPm: 'AM' as 'AM' | 'PM'}
-                      onValueChange={(val) => setFormData({...formData, reservationAmPm: 'AM' as 'AM' | 'PM'})}
-                    >
-                      <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
-                        <SelectValue />
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-stone-800">New Reservation</DialogTitle>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Customer Name</label>
+                    <Input 
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                      placeholder="John Doe"
+                      className="rounded-xl border-stone-200 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Phone Number</label>
+                    <Input 
+                      value={formData.customerPhone}
+                      onChange={(e) => setFormData({...formData, customerPhone: e.target.value})}
+                      placeholder="+1 234 567 890"
+                      className="rounded-xl border-stone-200 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Guests Count</label>
+                    <Input 
+                      type="number"
+                      value={formData.guestsCount}
+                      onChange={(e) => setFormData({...formData, guestsCount: e.target.value})}
+                      className="rounded-xl border-stone-200 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Reservation Time</label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={formData.reservationTime.split(':')[0]}
+                        onValueChange={(h) => {
+                          const mins = formData.reservationTime.split(':')[1] || '00';
+                          setFormData({...formData, reservationTime: `${h}:${mins}`});
+                        }}
+                      >
+                        <SelectTrigger className="rounded-xl border-stone-200 h-11 flex-1">
+                          <SelectValue placeholder="Hour" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
+                          {['12','01','02','03','04','05','06','07','08','09','10','11'].map(h => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={formData.reservationTime.split(':')[1] || '00'}
+                        onValueChange={(m) => {
+                          const hrs = formData.reservationTime.split(':')[0] || '12';
+                          setFormData({...formData, reservationTime: `${hrs}:${m}`});
+                        }}
+                      >
+                        <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
+                          <SelectValue placeholder="Min" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-stone-100 shadow-xl max-h-48">
+                          {['00','15','30','45'].map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        value={formData.reservationAmPm}
+                        onValueChange={(val: 'AM' | 'PM') => setFormData({...formData, reservationAmPm: val})}
+                      >
+                        <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-stone-100 shadow-xl">
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-stone-700">Select Table</label>
+                    <Select value={formData.tableId} onValueChange={(val) => setFormData({...formData, tableId: val})}>
+                      <SelectTrigger className="rounded-xl border-stone-200 h-11">
+                        <SelectValue placeholder="Choose a table" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-stone-100 shadow-xl">
-                        <SelectItem value="AM">AM</SelectItem>
-                        <SelectItem value="PM">PM</SelectItem>
+                        {tables.map(table => (
+                          <SelectItem key={table.id} value={table.number}>Table {table.number} ({table.capacity} seats)</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-stone-700">Select Table</label>
-                  <Select value={formData.tableId} onValueChange={(val) => setFormData({...formData, tableId: val})}>
-                    <SelectTrigger className="rounded-xl border-stone-200 h-11">
-                      <SelectValue placeholder="Choose a table" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-stone-100 shadow-xl">
-                      {tables.map(table => (
-                        <SelectItem key={table.id} value={table.number}>Table {table.number} ({table.capacity} seats)</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-bold text-stone-700">Date</label>
+                  <Calendar
+                    mode="single"
+                    selected={formData.dateTime}
+                    onSelect={(date) => date && setFormData({...formData, dateTime: date})}
+                    className="rounded-xl border border-stone-100 p-3"
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-stone-700">Date & Time</label>
-                <Calendar
-                  mode="single"
-                  selected={formData.dateTime}
-                  onSelect={(date) => date && setFormData({...formData, dateTime: date})}
-                  className="rounded-xl border border-stone-100 p-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button 
-                onClick={handleSave}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl h-12 font-bold"
-                disabled={!formData.customerName}
-              >
-                Confirm Booking
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button 
+                  onClick={handleSave}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-xl h-12 font-bold"
+                  disabled={!formData.customerName}
+                >
+                  Confirm Booking
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
 
-    <div className="relative max-w-md">
+      <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
         <Input 
           placeholder="Search by name or phone..." 
