@@ -145,7 +145,7 @@ const Dashboard = () => {
           <p className="text-stone-500 mt-1">Welcome back! Here's what's happening today.</p>
         </div>
         {profile?.role === 'manager' && (
-          
+          <div></div>
         )}
       </div>
 
