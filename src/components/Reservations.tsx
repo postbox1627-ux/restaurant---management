@@ -263,11 +263,21 @@ const Reservations = () => {
                         <SelectValue placeholder="Choose a table" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-stone-100 shadow-xl">
-                        {tables.map(table => (
-                          <SelectItem key={table.id} value={table.number}>Table {table.number} ({table.capacity} seats)</SelectItem>
-                        ))}
+                        {tables
+                          .filter(table => table.capacity >= parseInt(formData.guestsCount || '1'))
+                          .map(table => (
+                            <SelectItem key={table.id} value={table.number}>
+                              Table {table.number} ({table.capacity} seats)
+                            </SelectItem>
+                          ))
+                        }
                       </SelectContent>
                     </Select>
+                    {parseInt(formData.guestsCount) > 0 && (
+                      <p className="text-[11px] text-stone-400">
+                        Showing tables with capacity ≥ {formData.guestsCount} guests
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
