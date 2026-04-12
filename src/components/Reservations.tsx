@@ -201,7 +201,7 @@ const Reservations = () => {
                     <Input 
                       type="number"
                       value={formData.guestsCount}
-                      onChange={(e) => setFormData({...formData, guestsCount: e.target.value})}
+                      onChange={(e) => setFormData({...formData, guestsCount: e.target.value, tableId: ''})}
                       className="rounded-xl border-stone-200 h-11"
                     />
                   </div>
