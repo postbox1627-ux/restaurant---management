@@ -245,7 +245,7 @@ const Reservations = () => {
                 
                     <Select
                       value={formData.reservationAmPm || 'AM'}
-                      onValueChange={(val) => setFormData({...formData, reservationAmPm: val})}
+                      onValueChange={(val) => setFormData({...formData, reservationAmPm: 'AM'})}
                     >
                       <SelectTrigger className="rounded-xl border-stone-200 h-11 w-20">
                         <SelectValue />
