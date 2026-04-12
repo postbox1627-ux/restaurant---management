@@ -338,7 +338,7 @@ const Layout = () => {
       </main>
 
       {/* ── Toast Stack (bottom-right) ── */}
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 items-end">
+      <div className="fixed top-20 right-6 z-50 flex flex-col gap-3 items-end">
         {toasts.map(toast => (
           <Toast
             key={toast.id}
