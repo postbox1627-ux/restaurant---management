@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import type { User } from "firebase/auth";
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 import { auth, db } from '../lib/firebase';
-import firebaseConfig from '../../firebase-applet-config.json';
-import { UserProfile, UserRole } from '../types';
+import firebaseConfig from '../firebase-applet-config.json';
+import type { UserProfile, UserRole } from '../types';
 
 interface AuthContextType {
   user: User | null;

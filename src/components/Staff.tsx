@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, User, Mail, Shield, Trash2, Edit2, UserPlus, Hash, Loader2 } from 'lucide-react';
 import { collection, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { UserProfile, UserRole } from '../types';
+import type { UserProfile, UserRole } from '../types';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';

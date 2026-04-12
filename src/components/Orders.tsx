@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { collection, query, onSnapshot, orderBy, addDoc, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Order, OrderStatus, MenuItem, Table as TableType } from '../types';
+import type { Order, OrderStatus, MenuItem, Table as TableType } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';

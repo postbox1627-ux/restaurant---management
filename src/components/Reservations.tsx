@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search, Calendar as CalendarIcon, Phone, Mail, User, Clock, Trash2 } from 'lucide-react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, Timestamp, query, orderBy, getDocs, writeBatch } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { Reservation, ReservationStatus, Table as TableType } from '../types';
+import type { Reservation, ReservationStatus, Table as TableType } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';

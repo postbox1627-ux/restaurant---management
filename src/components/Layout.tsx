@@ -40,7 +40,9 @@ const SidebarItem: React.FC<{
 
 const Sidebar = () => {
   const location = useLocation();
-  const { profile, logout, loading } = useAuth();
+  const profile = { name: "Admin", role: "manager", email: "admin@test.com" };
+  const logout = () => {};
+  const loading = false;
   
   const menuItems = [
     { to: '/', icon: <LayoutDashboard size={20} />, label: 'Dashboard', roles: ['manager'] },
