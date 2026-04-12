@@ -202,11 +202,11 @@ const Orders = () => {
         </div>
         
           {profile?.role !== 'chef' && (
-                <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100">
-                  + New Order
-                </Button>
+            <button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 flex items-center gap-2 shadow-lg shadow-orange-100">
+              + New Order
+            </button>
           )}
-        </div>
+    </div>
             <DialogContent className="sm:max-w-[500px] rounded-3xl border-none shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-stone-800">Create New Order</DialogTitle>
