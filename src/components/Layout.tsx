@@ -57,7 +57,7 @@ const Sidebar = () => {
   );
 
   return (
-    <aside className="w-64 bg-white border-r border-stone-100 flex flex-col h-screen sticky top-0">
+    <aside className="w-64 bg-[#eeeeee] border-r border-stone-100 flex flex-col h-screen sticky top-0">
       <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-orange-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
           <UtensilsCrossed size={24} />
