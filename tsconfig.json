@@ -17,3 +17,9 @@
     "noUnusedParameters": false
   }
 }
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  }
+}
