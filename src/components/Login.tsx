@@ -57,7 +57,7 @@ const Login = () => {
           <p className="text-orange-100 mt-2">Restaurant Management System</p>
         </div>
         <CardHeader className="pt-8 text-center">
-          <CardTitle className="text-2xl text-stone-800">Staff Login</CardTitle>
+          <CardTitle className="text-2xl font-bold text-stone-800">Staff Login</CardTitle>
           <CardDescription className="text-stone-500">
             Enter your Employee ID and Password to continue
           </CardDescription>
@@ -70,7 +70,7 @@ const Login = () => {
                 <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400" size={18} />
                 <Input 
                   id="employeeId"
-                  placeholder="e.g. 2026MAN01" 
+                  placeholder="Employee ID" 
                   className="pl-10 rounded-xl border-stone-200 h-12 uppercase"
                   value={employeeId}
                   onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
