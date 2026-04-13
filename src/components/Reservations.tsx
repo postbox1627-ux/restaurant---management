@@ -68,6 +68,16 @@ const Reservations = () => {
     return Math.ceil(guests / maxCap);
   };
 
+  // Computed once, used by BOTH preview and handleSave
+  const tablesNeeded = getTablesNeeded();
+  const availableTables = tables
+    .filter(t => t.status === 'available')
+    .sort((a, b) => parseInt(a.number) - parseInt(b.number));
+  const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
+  const previewTables = startIndex >= 0
+    ? availableTables.slice(startIndex, startIndex + tablesNeeded).map(t => t.number)
+    : [];
+
   const handleSave = async () => {
     let [hours, minutes] = formData.reservationTime.split(':').map(Number);
     const ampm = formData.reservationAmPm;
@@ -77,15 +87,8 @@ const Reservations = () => {
     const reservationDate = new Date(formData.dateTime);
     reservationDate.setHours(hours, minutes, 0, 0);
 
-    const tablesNeeded = getTablesNeeded();
-
-    // Sort available tables by number to ensure correct consecutive selection
-    const sortedAvailable = tables
-      .filter(t => t.status === 'available')
-      .sort((a, b) => parseInt(a.number) - parseInt(b.number));
-
-    const startIndex = sortedAvailable.findIndex(t => t.number === formData.tableId);
-    const selectedTables = sortedAvailable.slice(startIndex, startIndex + tablesNeeded);
+    // Use EXACTLY the same tables shown in the preview — no recalculation
+    const selectedTables = tables.filter(t => previewTables.includes(t.number));
 
     const data = {
       customerName: formData.customerName,
@@ -93,17 +96,16 @@ const Reservations = () => {
       customerPhone: formData.customerPhone,
       dateTime: Timestamp.fromDate(reservationDate),
       tableId: formData.tableId,
-      tableIds: selectedTables.map(t => t.number),
+      tableIds: previewTables, // already the correct list
       tablesNeeded,
       guestsCount: parseInt(formData.guestsCount),
       status: formData.status
     };
 
     try {
-      // Add reservation first
       await addDoc(collection(db, 'reservations'), data);
 
-      // Mark ALL selected tables as reserved in one batch
+      // Batch update ALL selected tables atomically
       const batch = writeBatch(db);
       selectedTables.forEach(table => {
         batch.update(doc(db, 'tables', table.id), { status: 'reserved' });
@@ -171,17 +173,6 @@ const Reservations = () => {
     res.customerName.toLowerCase().includes(search.toLowerCase()) ||
     res.customerPhone?.includes(search)
   );
-
-  const tablesNeeded = getTablesNeeded();
-  const availableTables = tables
-    .filter(t => t.status === 'available')
-    .sort((a, b) => parseInt(a.number) - parseInt(b.number));
-
-  // Preview which tables will be reserved
-  const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
-  const previewTables = startIndex >= 0 
-    ? availableTables.slice(startIndex, startIndex + tablesNeeded).map(t => t.number)
-    : [];
 
   return (
     <div className="space-y-8">
