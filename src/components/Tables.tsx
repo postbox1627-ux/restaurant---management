@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Table as TableIcon, Users } from 'lucide-react';
+import { Plus, Table as TableIcon } from 'lucide-react';
 import { collection, onSnapshot, updateDoc, doc, writeBatch, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import type { Table as TableType, TableStatus, Reservation } from '../types';
@@ -201,9 +201,7 @@ const Tables = () => {
                 </div>
                 
                 <h3 className="text-xl font-black text-stone-800 mb-1">Table {table.number}</h3>
-                <div className="flex items-center gap-1.5 text-stone-500 text-sm mb-4">
-                  <Users size={14} />
-                  <span className="font-medium">{table.capacity} Seats</span>
+                <div className="mb-4">
                 </div>
 
                 <Badge className={`rounded-full px-3 py-1 border-none text-[10px] font-bold uppercase tracking-wider mb-6 ${
