@@ -79,10 +79,13 @@ const Reservations = () => {
 
     const tablesNeeded = getTablesNeeded();
 
-    // Get consecutive tables starting from selected
-    const availableTables = tables.filter(t => t.status === 'available');
-    const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
-    const selectedTables = availableTables.slice(startIndex, startIndex + tablesNeeded);
+    // Sort available tables by number to ensure correct consecutive selection
+    const sortedAvailable = tables
+      .filter(t => t.status === 'available')
+      .sort((a, b) => parseInt(a.number) - parseInt(b.number));
+
+    const startIndex = sortedAvailable.findIndex(t => t.number === formData.tableId);
+    const selectedTables = sortedAvailable.slice(startIndex, startIndex + tablesNeeded);
 
     const data = {
       customerName: formData.customerName,
@@ -97,12 +100,15 @@ const Reservations = () => {
     };
 
     try {
+      // Add reservation first
       await addDoc(collection(db, 'reservations'), data);
-      
-      // Reserve all selected tables
-      for (const table of selectedTables) {
-        await updateDoc(doc(db, 'tables', table.id), { status: 'reserved' });
-      }
+
+      // Mark ALL selected tables as reserved in one batch
+      const batch = writeBatch(db);
+      selectedTables.forEach(table => {
+        batch.update(doc(db, 'tables', table.id), { status: 'reserved' });
+      });
+      await batch.commit();
 
       setIsDialogOpen(false);
       setFormData({
@@ -128,15 +134,17 @@ const Reservations = () => {
       
       if (resToUpdate) {
         const tableIds = (resToUpdate as any).tableIds || (resToUpdate.tableId ? [resToUpdate.tableId] : []);
+        const batch = writeBatch(db);
         for (const tableNum of tableIds) {
           const tableToUpdate = tables.find(t => t.number === tableNum);
           if (tableToUpdate) {
             let newTableStatus: any = 'available';
             if (status === 'confirmed') newTableStatus = 'reserved';
             if (status === 'completed') newTableStatus = 'occupied';
-            await updateDoc(doc(db, 'tables', tableToUpdate.id), { status: newTableStatus });
+            batch.update(doc(db, 'tables', tableToUpdate.id), { status: newTableStatus });
           }
         }
+        await batch.commit();
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `reservations/${id}`);
@@ -165,7 +173,9 @@ const Reservations = () => {
   );
 
   const tablesNeeded = getTablesNeeded();
-  const availableTables = tables.filter(t => t.status === 'available');
+  const availableTables = tables
+    .filter(t => t.status === 'available')
+    .sort((a, b) => parseInt(a.number) - parseInt(b.number));
 
   // Preview which tables will be reserved
   const startIndex = availableTables.findIndex(t => t.number === formData.tableId);
@@ -315,7 +325,7 @@ const Reservations = () => {
                     </div>
                   </div>
 
-                  {/* Starting Table */}
+                  {/* Select Tables */}
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-stone-700">
                       Select Table{tablesNeeded > 1 ? 's' : ''}
@@ -336,7 +346,7 @@ const Reservations = () => {
                       </SelectContent>
                     </Select>
 
-                    {/* Preview which tables will be reserved */}
+                    {/* Preview */}
                     {previewTables.length > 0 && (
                       <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2">
                         <p className="text-[11px] text-emerald-700 font-semibold">
