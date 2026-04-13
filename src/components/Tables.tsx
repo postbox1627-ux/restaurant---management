@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Table as TableIcon, Users, Trash2 } from 'lucide-react';
-import { collection, onSnapshot, updateDoc, doc, writeBatch, getDocs, addDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { Plus, Table as TableIcon, Users } from 'lucide-react';
+import { collection, onSnapshot, updateDoc, doc, writeBatch, getDocs, addDoc, query, where } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import type { Table as TableType, TableStatus, Reservation } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -37,7 +37,6 @@ const Tables = () => {
       setTables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TableType)).sort((a, b) => parseInt(a.number) - parseInt(b.number)));
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'tables'));
 
-    // Listen to today's confirmed reservations
     const today = new Date();
     const q = query(
       collection(db, 'reservations'),
@@ -64,12 +63,19 @@ const Tables = () => {
       const batch = writeBatch(db);
       let hasChanges = false;
 
+      // Build a set of ALL reserved table numbers (including multi-table reservations)
+      const reservedTableNumbers = new Set<string>();
+      reservations.forEach(res => {
+        const ids = (res as any).tableIds?.length > 0 
+          ? (res as any).tableIds 
+          : res.tableId ? [res.tableId] : [];
+        ids.forEach((num: string) => reservedTableNumbers.add(num));
+      });
+
       tables.forEach((table) => {
-        // We only auto-manage 'available' and 'reserved' statuses. 
-        // 'occupied' is managed by active orders.
         if (table.status === 'occupied') return;
 
-        const isReservedToday = reservations.some(res => res.tableId === table.number);
+        const isReservedToday = reservedTableNumbers.has(table.number);
 
         if (isReservedToday && table.status !== 'reserved') {
           batch.update(doc(db, 'tables', table.id), { status: 'reserved' });
@@ -90,7 +96,7 @@ const Tables = () => {
     };
 
     updateStatuses();
-  }, [reservations, tables.length]); // We only trigger when reservations change or table list is first loaded
+  }, [reservations, tables.length]);
 
   const updateTableStatus = async (id: string, status: TableStatus) => {
     try {
@@ -125,14 +131,12 @@ const Tables = () => {
         {profile?.role === 'manager' && (
           <div className="flex gap-2">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger render={
-                <Button 
-                  className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100"
-                >
+              <DialogTrigger asChild>
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl px-6 h-12 gap-2 shadow-lg shadow-orange-100">
                   <Plus size={20} />
                   <span>Add Table</span>
                 </Button>
-              } />
+              </DialogTrigger>
               <DialogContent className="rounded-3xl border-none shadow-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-2xl font-bold text-stone-800">Add New Table</DialogTitle>
