@@ -331,7 +331,7 @@ const Reservations = () => {
                       <SelectContent className="rounded-xl border-stone-100 shadow-xl">
                         {availableTables.map(table => (
                           <SelectItem key={table.id} value={table.number}>
-                            Table {table.number} ({table.capacity} seats)
+                            Table {table.number}
                           </SelectItem>
                         ))}
                       </SelectContent>
